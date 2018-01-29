@@ -72,5 +72,11 @@ public class StringHelper {
 		String output = myFormatter.format(val);
 		return output;
 	}
+	
+	public static String formatFraction(double val) {
+		DecimalFormat myFormatter = new DecimalFormat("###,###.########");
+		String output = myFormatter.format(val);
+		return output;
+	}	
 
 }

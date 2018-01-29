@@ -28,6 +28,7 @@ public class CryptoUtils {
 
 		final SecureRandom random = SecureRandom.getInstanceStrong();
 
+		// TODO change to SecureRandom.nextBytes
 		for (int i = 0; i < binaryDigits / 4; i++) {
 			sb.append(Integer.toHexString(random.nextInt(16)));
 		}
