@@ -1,10 +1,13 @@
 package io.zdp.common.crypto;
 
+import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.util.Objects;
 import java.util.UUID;
 
+import org.apache.commons.codec.digest.DigestUtils;
 import org.junit.Test;
 
 import junit.framework.TestCase;
@@ -48,21 +51,22 @@ public class TestCryptoUtils extends TestCase {
 	}
 
 	@Test
-	public void testEncryption() {
+	public void testEncryption() throws Exception {
 
 		String uuid = UUID.randomUUID().toString();
 
-		char[] pass = "pass123".toCharArray();
+		String seed = DigestUtils.sha256Hex("pass123");
+		KeyPair keys = CryptoUtils.generateKeys(seed);
 
-		String encrypted = CryptoUtils.encrypt(uuid, pass);
+		byte[] encrypted = CryptoUtils.encrypt(keys.getPrivate().getEncoded(), uuid);
 
 		assertNotNull(encrypted);
 
-		assertFalse(encrypted.equals(uuid));
+		assertFalse(Objects.deepEquals(encrypted, uuid.getBytes(StandardCharsets.UTF_8)));
 
-		String decrypted = CryptoUtils.decrypt(encrypted, pass);
+		byte[] decrypted = CryptoUtils.decrypt(keys.getPublic().getEncoded(), encrypted);
 
-		assertEquals(uuid, decrypted);
+		assertTrue(Objects.deepEquals(uuid.getBytes(StandardCharsets.UTF_8), decrypted));
 
 	}
 

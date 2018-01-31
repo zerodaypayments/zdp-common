@@ -8,18 +8,13 @@ import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
 import java.util.zip.Inflater;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 public final class ZIPHelper {
-
-	private static final Logger log = LoggerFactory.getLogger(ZIPHelper.class);
 
 	public static byte[] compress(String string) {
 		try {
 			return compress(string.getBytes(StandardCharsets.UTF_8.displayName()));
 		} catch (UnsupportedEncodingException e) {
-			log.error("Error: ", e);
+			e.printStackTrace();
 		}
 		return null;
 	}
@@ -106,7 +101,7 @@ public final class ZIPHelper {
 		try {
 			return new String(decompressedData, StandardCharsets.UTF_8.displayName());
 		} catch (UnsupportedEncodingException e) {
-			log.error("Error: ", e);
+			e.printStackTrace();
 		}
 		return null;
 	}
