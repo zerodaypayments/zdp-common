@@ -58,13 +58,13 @@ public class TestCryptoUtils extends TestCase {
 		String seed = DigestUtils.sha256Hex("pass123");
 		KeyPair keys = CryptoUtils.generateKeys(seed);
 
-		byte[] encrypted = CryptoUtils.encrypt(keys.getPrivate().getEncoded(), uuid);
+		byte[] encrypted = CryptoUtils.encrypt(keys.getPrivate(), uuid);
 
 		assertNotNull(encrypted);
 
 		assertFalse(Objects.deepEquals(encrypted, uuid.getBytes(StandardCharsets.UTF_8)));
 
-		byte[] decrypted = CryptoUtils.decrypt(keys.getPublic().getEncoded(), encrypted);
+		byte[] decrypted = CryptoUtils.decrypt(keys.getPublic(), encrypted);
 
 		assertTrue(Objects.deepEquals(uuid.getBytes(StandardCharsets.UTF_8), decrypted));
 

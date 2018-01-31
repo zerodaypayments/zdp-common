@@ -41,19 +41,19 @@ public class CryptoUtils {
 		return hash != null && hash.trim().length() == 64;
 	}
 
-	public static byte[] encrypt(byte[] password, String message) throws Exception {
-		PrivateKey privateKey = Signer.generatePrivateKey(password);
+	public static byte[] encrypt(PrivateKey privateKey, byte[] message) throws Exception {
 		Cipher cipher = Cipher.getInstance(RSA);
 		cipher.init(Cipher.ENCRYPT_MODE, privateKey);
-
-		return cipher.doFinal(message.getBytes());
+		return cipher.doFinal(message);
 	}
 
-	public static byte[] decrypt(byte[] password, byte[] encrypted) throws Exception {
-		PublicKey publicKey = Signer.generatePublicKey(password);
+	public static byte[] encrypt(PrivateKey privateKey, String message) throws Exception {
+		return encrypt(privateKey, message.getBytes(StandardCharsets.UTF_8));
+	}
+
+	public static byte[] decrypt(PublicKey publicKey, byte[] encrypted) throws Exception {
 		Cipher cipher = Cipher.getInstance(RSA);
 		cipher.init(Cipher.DECRYPT_MODE, publicKey);
-
 		return cipher.doFinal(encrypted);
 	}
 
