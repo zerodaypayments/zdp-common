@@ -10,6 +10,9 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 
+import org.apache.commons.codec.digest.DigestUtils;
+import org.bitcoinj.core.Base58;
+
 /**
  * Digital signature utility methods
  * 
@@ -80,6 +83,16 @@ public class Signer {
 	public static PublicKey generatePublicKey(byte[] key) throws InvalidKeySpecException, NoSuchAlgorithmException {
 		final PublicKey pubKey = KeyFactory.getInstance(RSA).generatePublic(new X509EncodedKeySpec(key));
 		return pubKey;
+	}
+
+	public static String getPublicKeyHash(final PublicKey pubKey) {
+		return getPublicKeyHash(pubKey.getEncoded());
+	}
+
+	public static String getPublicKeyHash(final byte[] pubKey) {
+		final byte[] addressHash = DigestUtils.sha512(pubKey);
+		final String addressBase58 = Base58.encode(addressHash);
+		return addressBase58;
 	}
 
 }

@@ -12,27 +12,26 @@ import java.security.SecureRandom;
 
 import javax.crypto.Cipher;
 
+import org.apache.commons.codec.digest.DigestUtils;
+
 public class CryptoUtils {
 
 	private static final String RSA = "RSA";
 
-	public static String generateRandomNumber(final int bits) throws NoSuchAlgorithmException {
-
-		final StringBuilder sb = new StringBuilder();
+	public static String generateRandomNumber256bits() throws NoSuchAlgorithmException {
 
 		final SecureRandom random = SecureRandom.getInstanceStrong();
 
-		// TODO change to SecureRandom.nextBytes
-		for (int i = 0; i < bits / 4; i++) {
-			sb.append(Integer.toHexString(random.nextInt(16)));
-		}
+		byte[] array = new byte[128];
 
-		return sb.toString().toUpperCase();
+		random.nextBytes(array);
+
+		return DigestUtils.sha256Hex(array);
 
 	}
 
 	public static void main(String[] args) throws Exception {
-		String seed = generateRandomNumber(256);
+		String seed = generateRandomNumber256bits();
 		System.out.println(seed);
 		System.out.println(seed.length());
 	}

@@ -15,7 +15,7 @@ public class TestSigner extends TestCase {
 
 		try {
 
-			String key = CryptoUtils.generateRandomNumber(256);
+			String key = CryptoUtils.generateRandomNumber256bits();
 
 			assertNotNull(key);
 			assertEquals(64, key.length());
@@ -59,7 +59,7 @@ public class TestSigner extends TestCase {
 
 		try {
 
-			String key = CryptoUtils.generateRandomNumber(256);
+			String key = CryptoUtils.generateRandomNumber256bits();
 
 			assertNotNull(key);
 			assertEquals(64, key.length());
