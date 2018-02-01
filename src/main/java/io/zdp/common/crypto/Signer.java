@@ -90,9 +90,9 @@ public class Signer {
 	}
 
 	public static String getPublicKeyHash(final byte[] pubKey) {
-		final byte[] addressHash = DigestUtils.sha512(pubKey);
-		final String addressBase58 = Base58.encode(addressHash);
-		return addressBase58;
+		byte[] addressHash = DigestUtils.sha512(pubKey);
+		final String hash = DigestUtils.sha256Hex(addressHash);
+		return hash;
 	}
 
 }
