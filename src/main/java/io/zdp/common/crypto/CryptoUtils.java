@@ -9,14 +9,23 @@ import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
+import java.security.Security;
 
 import javax.crypto.Cipher;
 
 import org.apache.commons.codec.digest.DigestUtils;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.jasypt.encryption.pbe.StandardPBEByteEncryptor;
 
 public class CryptoUtils {
 
 	private static final String RSA = "RSA";
+	private static final String BC = "BC";
+	private static final String PBEWITHSHA256AND256BITAES_CBC_BC = "PBEWITHSHA256AND256BITAES-CBC-BC";
+
+	static {
+		Security.addProvider(new BouncyCastleProvider());
+	}
 
 	public static String generateRandomNumber256bits() throws NoSuchAlgorithmException {
 
@@ -28,12 +37,6 @@ public class CryptoUtils {
 
 		return DigestUtils.sha256Hex(array);
 
-	}
-
-	public static void main(String[] args) throws Exception {
-		String seed = generateRandomNumber256bits();
-		System.out.println(seed);
-		System.out.println(seed.length());
 	}
 
 	public static boolean isValidAddress(String hash) {
@@ -67,6 +70,28 @@ public class CryptoUtils {
 
 		final KeyPair keys = kpg.generateKeyPair();
 		return keys;
+	}
+
+	public static byte[] encryptLargeData(String password, byte[] data) throws Exception {
+
+		StandardPBEByteEncryptor encryptor = new StandardPBEByteEncryptor();
+		encryptor.setPassword(password);
+		encryptor.setAlgorithm(PBEWITHSHA256AND256BITAES_CBC_BC);
+		byte[] encryptedBytes = encryptor.encrypt(data);
+
+		return encryptedBytes;
+
+	}
+
+	public static byte[] decryptLargeData(String password, byte[] data) throws Exception {
+
+		StandardPBEByteEncryptor encryptor = new StandardPBEByteEncryptor();
+		encryptor.setPassword(password);
+		encryptor.setAlgorithm(PBEWITHSHA256AND256BITAES_CBC_BC);
+		byte[] decryptedBytes = encryptor.decrypt(data);
+
+		return decryptedBytes;
+
 	}
 
 }
