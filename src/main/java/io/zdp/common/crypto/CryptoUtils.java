@@ -40,7 +40,7 @@ public class CryptoUtils {
 	}
 
 	public static boolean isValidAddress(String hash) {
-		return hash != null && hash.trim().length() == 64;
+		return hash != null && hash.trim().length() == 44;
 	}
 
 	public static byte[] encrypt(PrivateKey privateKey, byte[] message) throws Exception {
