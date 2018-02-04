@@ -14,6 +14,9 @@ import java.security.Security;
 import javax.crypto.Cipher;
 
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.bitcoinj.core.AddressFormatException;
+import org.bitcoinj.core.Base58;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.jasypt.encryption.pbe.StandardPBEByteEncryptor;
 
@@ -40,7 +43,16 @@ public class CryptoUtils {
 	}
 
 	public static boolean isValidAddress(String hash) {
-		return hash != null && hash.trim().length() == 44;
+		if (StringUtils.isBlank(hash)) {
+			return false;
+		}
+
+		try {
+			Base58.decode(hash);
+		} catch (AddressFormatException e) {
+			return false;
+		}
+		return true;
 	}
 
 	public static byte[] encrypt(PrivateKey privateKey, byte[] message) throws Exception {
