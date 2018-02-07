@@ -61,13 +61,29 @@ public class CryptoUtils {
 		return cipher.doFinal(message);
 	}
 
+	public static byte[] encrypt(PublicKey pubKey, byte[] message) throws Exception {
+		Cipher cipher = Cipher.getInstance(RSA);
+		cipher.init(Cipher.ENCRYPT_MODE, pubKey);
+		return cipher.doFinal(message);
+	}
+
 	public static byte[] encrypt(PrivateKey privateKey, String message) throws Exception {
 		return encrypt(privateKey, message.getBytes(StandardCharsets.UTF_8));
+	}
+
+	public static byte[] encrypt(PublicKey pubKey, String message) throws Exception {
+		return encrypt(pubKey, message.getBytes(StandardCharsets.UTF_8));
 	}
 
 	public static byte[] decrypt(PublicKey publicKey, byte[] encrypted) throws Exception {
 		Cipher cipher = Cipher.getInstance(RSA);
 		cipher.init(Cipher.DECRYPT_MODE, publicKey);
+		return cipher.doFinal(encrypted);
+	}
+
+	public static byte[] decrypt(PrivateKey privKey, byte[] encrypted) throws Exception {
+		Cipher cipher = Cipher.getInstance(RSA);
+		cipher.init(Cipher.DECRYPT_MODE, privKey);
 		return cipher.doFinal(encrypted);
 	}
 
@@ -78,7 +94,7 @@ public class CryptoUtils {
 		final SecureRandom random = new SecureRandom(seed.getBytes(StandardCharsets.UTF_8));
 		random.setSeed(new BigInteger(seed, 16).toByteArray());
 
-		kpg.initialize(2048, random);
+		kpg.initialize(4096, random);
 
 		final KeyPair keys = kpg.generateKeyPair();
 		return keys;
@@ -104,6 +120,11 @@ public class CryptoUtils {
 
 		return decryptedBytes;
 
+	}
+	
+	public String generateAddress(String balanceUuid) {
+		// TODO
+		return null;
 	}
 
 }
