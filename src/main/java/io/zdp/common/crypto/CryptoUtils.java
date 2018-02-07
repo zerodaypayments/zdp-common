@@ -1,7 +1,9 @@
 package io.zdp.common.crypto;
 
+import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
+import java.security.Key;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
@@ -10,10 +12,13 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Security;
+import java.security.spec.InvalidKeySpecException;
 
 import javax.crypto.Cipher;
 
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.bitcoinj.core.AddressFormatException;
 import org.bitcoinj.core.Base58;
@@ -25,6 +30,8 @@ public class CryptoUtils {
 	private static final String RSA = "RSA";
 	private static final String BC = "BC";
 	private static final String PBEWITHSHA256AND256BITAES_CBC_BC = "PBEWITHSHA256AND256BITAES-CBC-BC";
+
+	private static PublicKey publicKey;
 
 	static {
 		Security.addProvider(new BouncyCastleProvider());
@@ -55,33 +62,17 @@ public class CryptoUtils {
 		return true;
 	}
 
-	public static byte[] encrypt(PrivateKey privateKey, byte[] message) throws Exception {
+	public static byte[] encrypt(Key key, byte[] message) throws Exception {
 		Cipher cipher = Cipher.getInstance(RSA);
-		cipher.init(Cipher.ENCRYPT_MODE, privateKey);
+		cipher.init(Cipher.ENCRYPT_MODE, key);
 		return cipher.doFinal(message);
 	}
 
-	public static byte[] encrypt(PublicKey pubKey, byte[] message) throws Exception {
-		Cipher cipher = Cipher.getInstance(RSA);
-		cipher.init(Cipher.ENCRYPT_MODE, pubKey);
-		return cipher.doFinal(message);
+	public static byte[] encrypt(Key key, String message) throws Exception {
+		return encrypt(key, message.getBytes(StandardCharsets.UTF_8));
 	}
 
-	public static byte[] encrypt(PrivateKey privateKey, String message) throws Exception {
-		return encrypt(privateKey, message.getBytes(StandardCharsets.UTF_8));
-	}
-
-	public static byte[] encrypt(PublicKey pubKey, String message) throws Exception {
-		return encrypt(pubKey, message.getBytes(StandardCharsets.UTF_8));
-	}
-
-	public static byte[] decrypt(PublicKey publicKey, byte[] encrypted) throws Exception {
-		Cipher cipher = Cipher.getInstance(RSA);
-		cipher.init(Cipher.DECRYPT_MODE, publicKey);
-		return cipher.doFinal(encrypted);
-	}
-
-	public static byte[] decrypt(PrivateKey privKey, byte[] encrypted) throws Exception {
+	public static byte[] decrypt(Key privKey, byte[] encrypted) throws Exception {
 		Cipher cipher = Cipher.getInstance(RSA);
 		cipher.init(Cipher.DECRYPT_MODE, privKey);
 		return cipher.doFinal(encrypted);
@@ -121,10 +112,20 @@ public class CryptoUtils {
 		return decryptedBytes;
 
 	}
-	
-	public String generateAddress(String balanceUuid) {
-		// TODO
-		return null;
+
+	public static String generateAddress(String balanceUuid) throws Exception {
+
+		if (publicKey == null) {
+			publicKey = Signer.generatePublicKey(IOUtils.toByteArray(CryptoUtils.class.getResource("/cert/public")));
+		}
+
+		byte[] encrypted = CryptoUtils.encrypt(publicKey, balanceUuid);
+
+		String address = Base58.encode(encrypted);
+
+		address = "zdp0" + address;
+
+		return address;
 	}
 
 }
