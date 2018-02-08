@@ -11,7 +11,6 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 
 import org.apache.commons.codec.digest.DigestUtils;
-import org.bitcoinj.core.Base58;
 
 /**
  * Digital signature utility methods
@@ -91,9 +90,8 @@ public class Signer {
 
 	public static String getPublicKeyHash(final byte[] pubKey) {
 		byte[] addressHash = DigestUtils.sha512(pubKey);
-		final byte[] hash = DigestUtils.sha256(addressHash);
-		final String base58 = Base58.encode(hash);
-		return base58;
+		final String hash = DigestUtils.sha256Hex(addressHash);
+		return hash;
 	}
 
 }
