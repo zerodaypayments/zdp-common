@@ -27,6 +27,7 @@ import org.jasypt.encryption.pbe.StandardPBEByteEncryptor;
 
 public class CryptoUtils {
 
+	private static final String ZDP0 = "zdp0";
 	private static final String RSA = "RSA";
 	private static final String BC = "BC";
 	private static final String PBEWITHSHA256AND256BITAES_CBC_BC = "PBEWITHSHA256AND256BITAES-CBC-BC";
@@ -34,7 +35,15 @@ public class CryptoUtils {
 	private static PublicKey publicKey;
 
 	static {
+
 		Security.addProvider(new BouncyCastleProvider());
+
+		try {
+			publicKey = Signer.generatePublicKey(IOUtils.toByteArray(CryptoUtils.class.getResource("/cert/public")));
+		} catch (InvalidKeySpecException | NoSuchAlgorithmException | IOException e) {
+			e.printStackTrace();
+		}
+
 	}
 
 	public static String generateRandomNumber256bits() throws NoSuchAlgorithmException {
@@ -50,15 +59,25 @@ public class CryptoUtils {
 	}
 
 	public static boolean isValidAddress(String hash) {
+
 		if (StringUtils.isBlank(hash)) {
 			return false;
 		}
 
+		if (false == hash.startsWith(CryptoUtils.ZDP0)) {
+			return false;
+		}
+
 		try {
+
+			hash = StringUtils.removeStart(hash, ZDP0);
+
 			Base58.decode(hash);
+
 		} catch (AddressFormatException e) {
 			return false;
 		}
+
 		return true;
 	}
 
@@ -113,19 +132,30 @@ public class CryptoUtils {
 
 	}
 
-	public static String generateAddress(String balanceUuid) throws Exception {
-
-		if (publicKey == null) {
-			publicKey = Signer.generatePublicKey(IOUtils.toByteArray(CryptoUtils.class.getResource("/cert/public")));
-		}
+	public static String getUniqueAddressForAccountUuid(String balanceUuid) throws Exception {
 
 		byte[] encrypted = CryptoUtils.encrypt(publicKey, balanceUuid);
 
 		String address = Base58.encode(encrypted);
 
-		address = "zdp0" + address;
+		address = ZDP0 + address;
 
 		return address;
+	}
+
+	public static String getAccountUuidForUniqueAddress(PrivateKey privKey, String address) throws Exception {
+
+		if (false == address.startsWith(ZDP0)) {
+			throw new IllegalArgumentException("Address not valid, must start with '" + ZDP0 + "': " + address);
+		}
+
+		address = StringUtils.removeStart(address, ZDP0);
+
+		byte[] encrypted = Base58.decode(address);
+
+		byte[] decrypted = CryptoUtils.decrypt(privKey, encrypted);
+
+		return new String(decrypted, StandardCharsets.UTF_8);
 	}
 
 }
