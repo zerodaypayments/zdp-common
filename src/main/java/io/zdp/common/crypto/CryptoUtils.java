@@ -49,7 +49,7 @@ public class CryptoUtils {
 
 		final SecureRandom random = SecureRandom.getInstanceStrong();
 
-		byte[] array = new byte[128];
+		byte[] array = new byte[256];
 
 		random.nextBytes(array);
 
@@ -155,6 +155,22 @@ public class CryptoUtils {
 		byte[] decrypted = CryptoUtils.decrypt(privKey, encrypted);
 
 		return new String(decrypted, StandardCharsets.UTF_8);
+	}
+	
+	public static void main(String[] args) throws Exception {
+
+		final SecureRandom random = SecureRandom.getInstanceStrong();
+
+		byte[] array = new byte[1024];
+
+		random.nextBytes(array);
+		
+		array = DigestUtils.sha512(array);
+
+		String addr = Base58.encode(array);
+		
+		System.out.println(addr);
+		
 	}
 
 }
