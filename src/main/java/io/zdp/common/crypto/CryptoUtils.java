@@ -157,20 +157,4 @@ public class CryptoUtils {
 		return new String(decrypted, StandardCharsets.UTF_8);
 	}
 	
-	public static void main(String[] args) throws Exception {
-
-		final SecureRandom random = SecureRandom.getInstanceStrong();
-
-		byte[] array = new byte[1024];
-
-		random.nextBytes(array);
-		
-		array = DigestUtils.sha512(array);
-
-		String addr = Base58.encode(array);
-		
-		System.out.println(addr);
-		
-	}
-
 }

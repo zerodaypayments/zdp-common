@@ -58,13 +58,19 @@ public class Signer {
 	 */
 	public static boolean isValidSignature(PublicKey pub, String data, byte[] signature) throws Exception {
 
-		Signature sign = Signature.getInstance(SHA256WITH_RSA);
+		try {
+			Signature sign = Signature.getInstance(SHA256WITH_RSA);
 
-		sign.initVerify(pub);
+			sign.initVerify(pub);
 
-		sign.update(data.getBytes(StandardCharsets.UTF_8));
+			sign.update(data.getBytes(StandardCharsets.UTF_8));
 
-		return sign.verify(signature);
+			return sign.verify(signature);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		return false;
 
 	}
 
