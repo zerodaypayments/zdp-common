@@ -23,13 +23,14 @@ import org.bitcoinj.core.AddressFormatException;
 import org.bitcoinj.core.Base58;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.jasypt.encryption.pbe.StandardPBEByteEncryptor;
+import org.jasypt.encryption.pbe.StandardPBEStringEncryptor;
 
 public class CryptoUtils {
 
 	private static final String ZDP0 = "zdp0";
 	private static final String RSA = "RSA";
 	private static final String BC = "BC";
-	private static final String PBEWITHSHA256AND256BITAES_CBC_BC = "PBEWITHSHA256AND256BITAES-CBC-BC";
+	public static final String PBEWITHSHA256AND256BITAES_CBC_BC = "PBEWITHSHA256AND256BITAES-CBC-BC";
 
 	private static PublicKey publicKey;
 
@@ -49,7 +50,7 @@ public class CryptoUtils {
 
 		final SecureRandom random = SecureRandom.getInstanceStrong();
 
-		byte[] array = new byte[256];
+		byte[] array = new byte[4096];
 
 		random.nextBytes(array);
 
@@ -103,7 +104,7 @@ public class CryptoUtils {
 		final SecureRandom random = new SecureRandom(seed.getBytes(StandardCharsets.UTF_8));
 		random.setSeed(new BigInteger(seed, 16).toByteArray());
 
-		kpg.initialize(4096, random);
+		kpg.initialize(2048, random);
 
 		final KeyPair keys = kpg.generateKeyPair();
 		return keys;
@@ -156,5 +157,33 @@ public class CryptoUtils {
 
 		return new String(decrypted, StandardCharsets.UTF_8);
 	}
-	
+
+	public static String encrypt(String password, String text) {
+
+		StandardPBEStringEncryptor encryptor = new StandardPBEStringEncryptor();
+		encryptor.setPassword(password);
+		encryptor.setProviderName(BC);
+		encryptor.setAlgorithm(CryptoUtils.PBEWITHSHA256AND256BITAES_CBC_BC);
+		return encryptor.encrypt(text);
+
+	}
+
+	public static String decrypt(String password, String text) {
+
+		StandardPBEStringEncryptor encryptor = new StandardPBEStringEncryptor();
+		encryptor.setPassword(password);
+		encryptor.setProviderName(BC);
+		encryptor.setAlgorithm(CryptoUtils.PBEWITHSHA256AND256BITAES_CBC_BC);
+		return encryptor.decrypt(text);
+
+	}
+
+	public static void main(String[] args) throws Exception {
+
+		System.out.println(generateRandomNumber256bits());
+
+		// 4096 	2375 	550
+		// 2048	1218	294
+	}
+
 }
