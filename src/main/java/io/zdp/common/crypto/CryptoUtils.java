@@ -1,189 +1,213 @@
 package io.zdp.common.crypto;
 
-import java.io.IOException;
-import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
-import java.security.Key;
+import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
+import java.security.MessageDigest;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Security;
-import java.security.spec.InvalidKeySpecException;
+import java.security.Signature;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 
 import javax.crypto.Cipher;
 
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.bitcoinj.core.AddressFormatException;
 import org.bitcoinj.core.Base58;
+import org.bouncycastle.jce.ECNamedCurveTable;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.jasypt.encryption.pbe.StandardPBEByteEncryptor;
-import org.jasypt.encryption.pbe.StandardPBEStringEncryptor;
+import org.bouncycastle.jce.spec.ECParameterSpec;
+import org.bouncycastle.util.encoders.Hex;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class CryptoUtils {
 
-	private static final String ZDP0 = "zdp0";
-	private static final String RSA = "RSA";
-	private static final String BC = "BC";
-	public static final String PBEWITHSHA256AND256BITAES_CBC_BC = "PBEWITHSHA256AND256BITAES-CBC-BC";
+	private static final String SHA256WITH_ECDSA = "SHA256withECDSA";
 
-	private static PublicKey publicKey;
+	public static final SecureRandom SECURE_RANDOM = new SecureRandom();
+
+	public static final String RIPEMD160 = "RIPEMD160";
+
+	public static final String ECIES = "ECIES";
+
+	public static final String BRAINPOOLP256T1 = "brainpoolp256t1";
+
+	public static final String EC = "EC";
+
+	private static final Logger log = LoggerFactory.getLogger(CryptoUtils.class);
+
+	public static final String ADDRESS_PREFIX_ZDP00 = "zdp00";
+
+	private static PublicKey networkAddressPublicKey;
 
 	static {
 
 		Security.addProvider(new BouncyCastleProvider());
 
 		try {
-			publicKey = Signer.generatePublicKey(IOUtils.toByteArray(CryptoUtils.class.getResource("/cert/public")));
-		} catch (InvalidKeySpecException | NoSuchAlgorithmException | IOException e) {
+			String pubKey64 = IOUtils.toString(CryptoUtils.class.getResource("/cert/ec-public"), StandardCharsets.UTF_8);
+			networkAddressPublicKey = generatePublicKey(Base64.decodeBase64(pubKey64));
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 
 	}
 
-	public static String generateRandomNumber256bits() throws NoSuchAlgorithmException {
-
-		final SecureRandom random = SecureRandom.getInstanceStrong();
-
-		byte[] array = new byte[4096];
-
-		random.nextBytes(array);
-
-		return DigestUtils.sha256Hex(array);
-
+	public static PublicKey getNetworkAddressPublicKey() {
+		return networkAddressPublicKey;
 	}
 
-	public static boolean isValidAddress(String hash) {
-
-		if (StringUtils.isBlank(hash)) {
-			return false;
-		}
-
-		if (false == hash.startsWith(CryptoUtils.ZDP0)) {
-			return false;
-		}
+	/**
+	 * Generate a random EC key pair
+	 */
+	public static KeyPair generateECKeyPair() {
 
 		try {
 
-			hash = StringUtils.removeStart(hash, ZDP0);
+			ECParameterSpec ecSpec = ECNamedCurveTable.getParameterSpec(BRAINPOOLP256T1);
+			KeyPairGenerator g = KeyPairGenerator.getInstance(EC, BouncyCastleProvider.PROVIDER_NAME);
+			g.initialize(ecSpec, SECURE_RANDOM);
+			KeyPair pair = g.generateKeyPair();
 
-			Base58.decode(hash);
+			return pair;
 
-		} catch (AddressFormatException e) {
-			return false;
+		} catch (Exception e) {
+			log.error("Error: ", e);
 		}
 
-		return true;
-	}
-
-	public static byte[] encrypt(Key key, byte[] message) throws Exception {
-		Cipher cipher = Cipher.getInstance(RSA);
-		cipher.init(Cipher.ENCRYPT_MODE, key);
-		return cipher.doFinal(message);
-	}
-
-	public static byte[] encrypt(Key key, String message) throws Exception {
-		return encrypt(key, message.getBytes(StandardCharsets.UTF_8));
-	}
-
-	public static byte[] decrypt(Key privKey, byte[] encrypted) throws Exception {
-		Cipher cipher = Cipher.getInstance(RSA);
-		cipher.init(Cipher.DECRYPT_MODE, privKey);
-		return cipher.doFinal(encrypted);
-	}
-
-	public static KeyPair generateKeys(final String seed) throws NoSuchAlgorithmException, NoSuchProviderException {
-
-		final KeyPairGenerator kpg = KeyPairGenerator.getInstance(RSA);
-
-		final SecureRandom random = new SecureRandom(seed.getBytes(StandardCharsets.UTF_8));
-		random.setSeed(new BigInteger(seed, 16).toByteArray());
-
-		kpg.initialize(2048, random);
-
-		final KeyPair keys = kpg.generateKeyPair();
-		return keys;
-	}
-
-	public static byte[] encryptLargeData(String password, byte[] data) throws Exception {
-
-		StandardPBEByteEncryptor encryptor = new StandardPBEByteEncryptor();
-		encryptor.setPassword(password);
-		encryptor.setAlgorithm(PBEWITHSHA256AND256BITAES_CBC_BC);
-		byte[] encryptedBytes = encryptor.encrypt(data);
-
-		return encryptedBytes;
+		return null;
 
 	}
 
-	public static byte[] decryptLargeData(String password, byte[] data) throws Exception {
+	/**
+	 * Generate an ECC private key a HEX string 
+	 */
+	public static PrivateKey generateECKeyPairFromPrivateKey(String privateKeyHex) {
 
-		StandardPBEByteEncryptor encryptor = new StandardPBEByteEncryptor();
-		encryptor.setPassword(password);
-		encryptor.setAlgorithm(PBEWITHSHA256AND256BITAES_CBC_BC);
-		byte[] decryptedBytes = encryptor.decrypt(data);
+		try {
 
-		return decryptedBytes;
+			KeyFactory kf = KeyFactory.getInstance(EC, BouncyCastleProvider.PROVIDER_NAME);
+			PrivateKey privateKey = kf.generatePrivate(new PKCS8EncodedKeySpec(Hex.decode(privateKeyHex)));
 
-	}
+			return privateKey;
 
-	public static String getUniqueAddressForAccountUuid(String balanceUuid) throws Exception {
-
-		byte[] encrypted = CryptoUtils.encrypt(publicKey, balanceUuid);
-
-		String address = Base58.encode(encrypted);
-
-		address = ZDP0 + address;
-
-		return address;
-	}
-
-	public static String getAccountUuidForUniqueAddress(PrivateKey privKey, String address) throws Exception {
-
-		if (false == address.startsWith(ZDP0)) {
-			throw new IllegalArgumentException("Address not valid, must start with '" + ZDP0 + "': " + address);
+		} catch (Exception e) {
+			log.error("Error: ", e);
 		}
 
-		address = StringUtils.removeStart(address, ZDP0);
-
-		byte[] encrypted = Base58.decode(address);
-
-		byte[] decrypted = CryptoUtils.decrypt(privKey, encrypted);
-
-		return new String(decrypted, StandardCharsets.UTF_8);
-	}
-
-	public static String encrypt(String password, String text) {
-
-		StandardPBEStringEncryptor encryptor = new StandardPBEStringEncryptor();
-		encryptor.setPassword(password);
-		encryptor.setProviderName(BC);
-		encryptor.setAlgorithm(CryptoUtils.PBEWITHSHA256AND256BITAES_CBC_BC);
-		return encryptor.encrypt(text);
+		return null;
 
 	}
 
-	public static String decrypt(String password, String text) {
+	/**
+	 * Generate account UUID from Public Key
+	 */
+	public static String generateAccountUuid(final String publicKeyHexString) throws Exception {
 
-		StandardPBEStringEncryptor encryptor = new StandardPBEStringEncryptor();
-		encryptor.setPassword(password);
-		encryptor.setProviderName(BC);
-		encryptor.setAlgorithm(CryptoUtils.PBEWITHSHA256AND256BITAES_CBC_BC);
-		return encryptor.decrypt(text);
+		final byte[] pub = Hex.decode(publicKeyHexString);
+
+		final byte[] hash = DigestUtils.sha256(DigestUtils.sha256(pub));
+
+		final MessageDigest messageDigest = MessageDigest.getInstance(RIPEMD160, BouncyCastleProvider.PROVIDER_NAME);
+
+		final byte[] hashedString = messageDigest.digest(hash);
+
+		final String account = Base58.encode(hashedString);
+
+		return account;
+	}
+
+	/**
+	 * Create PrivateKey from byte array
+	 */
+	public static PrivateKey generatePrivateKey(byte[] key) throws Exception {
+
+		final PrivateKey privKey = KeyFactory.getInstance(EC, BouncyCastleProvider.PROVIDER_NAME).generatePrivate(new PKCS8EncodedKeySpec(key));
+
+		return privKey;
 
 	}
 
-	public static void main(String[] args) throws Exception {
+	/**
+	 * Create PublicKey from byte array
+	 */
+	public static PublicKey generatePublicKey(byte[] key) throws Exception {
+		final PublicKey pubKey = KeyFactory.getInstance(EC, BouncyCastleProvider.PROVIDER_NAME).generatePublic(new X509EncodedKeySpec(key));
+		return pubKey;
+	}
 
-		System.out.println(generateRandomNumber256bits());
+	/**
+	 * Generate a unique address for an account with a public key
+	 */
+	public static String generateAccountUniqueAddress(final String publicKeyHexString) {
 
-		// 4096 	2375 	550
-		// 2048	1218	294
+		try {
+
+			String accountUuid = generateAccountUuid(publicKeyHexString);
+
+			final byte[] publicKeyBytes = accountUuid.getBytes(StandardCharsets.UTF_8);
+
+			final Cipher c = Cipher.getInstance(ECIES);
+
+			c.init(Cipher.ENCRYPT_MODE, networkAddressPublicKey, SECURE_RANDOM);
+
+			byte[] out = c.doFinal(publicKeyBytes);
+
+			String address = Base58.encode(out);
+
+			return ADDRESS_PREFIX_ZDP00 + address;
+			
+		} catch (Exception e) {
+			log.error("Error: ", e);
+			e.printStackTrace();
+		}
+
+		return null;
+
+	}
+
+	/**
+	 * Sign a UTF-8 string by using a provided RSA private key
+	 */
+	public static byte[] sign(PrivateKey pvt, String data) throws Exception {
+
+		Signature sign = Signature.getInstance(SHA256WITH_ECDSA, BouncyCastleProvider.PROVIDER_NAME);
+
+		sign.initSign(pvt);
+
+		sign.update(data.getBytes(StandardCharsets.UTF_8));
+
+		return sign.sign();
+
+	}
+
+	/**
+	 * Check is a Digital signature is valid by using provided RS public key
+	 */
+	public static boolean isValidSignature(PublicKey pub, String data, byte[] signature) throws Exception {
+
+		try {
+
+			Signature sign = Signature.getInstance(SHA256WITH_ECDSA, BouncyCastleProvider.PROVIDER_NAME);
+
+			sign.initVerify(pub);
+
+			sign.update(data.getBytes(StandardCharsets.UTF_8));
+
+			return sign.verify(signature);
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		return false;
+
 	}
 
 }
