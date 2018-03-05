@@ -1,16 +1,21 @@
 package io.zdp.common.crypto;
 
+import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Security;
 import java.security.Signature;
-import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.ECFieldF2m;
+import java.security.spec.ECFieldFp;
+import java.security.spec.EllipticCurve;
+import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
 
 import javax.crypto.Cipher;
@@ -19,9 +24,20 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.IOUtils;
 import org.bitcoinj.core.Base58;
+import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPrivateKey;
+import org.bouncycastle.jcajce.provider.asymmetric.util.EC5Util;
 import org.bouncycastle.jce.ECNamedCurveTable;
+import org.bouncycastle.jce.ECPointUtil;
+import org.bouncycastle.jce.interfaces.ECPublicKey;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
+import org.bouncycastle.jce.spec.ECNamedCurveSpec;
 import org.bouncycastle.jce.spec.ECParameterSpec;
+import org.bouncycastle.jce.spec.ECPrivateKeySpec;
+import org.bouncycastle.jce.spec.ECPublicKeySpec;
+import org.bouncycastle.math.ec.ECCurve;
+import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.math.ec.FixedPointCombMultiplier;
 import org.bouncycastle.util.encoders.Hex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,22 +67,42 @@ public class CryptoUtils {
 		Security.addProvider(new BouncyCastleProvider());
 
 		try {
-			String pubKey64 = IOUtils.toString(CryptoUtils.class.getResource("/cert/ec-public"), StandardCharsets.UTF_8);
-			networkAddressPublicKey = generatePublicKey(Base64.decodeBase64(pubKey64));
+			String pubKey64 = IOUtils.toString(CryptoUtils.class.getResource("/cert/ec-public"),
+					StandardCharsets.UTF_8);
+			networkAddressPublicKey = loadPublicKey(Base64.decodeBase64(pubKey64));
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 
 	}
 
-	public static PublicKey getNetworkAddressPublicKey() {
-		return networkAddressPublicKey;
+	/**
+	 * Create PublicKey from byte array
+	 */
+	public static PublicKey loadPublicKey(byte[] key) throws Exception {
+		final PublicKey pubKey = KeyFactory.getInstance(EC, BouncyCastleProvider.PROVIDER_NAME)
+				.generatePublic(new X509EncodedKeySpec(key));
+		return pubKey;
+	}
+
+	public static PrivateKey getPrivateKeyFromECBigIntAndCurve(BigInteger s) {
+
+		ECParameterSpec ecParameterSpec = ECNamedCurveTable.getParameterSpec(BRAINPOOLP256T1);
+
+		ECPrivateKeySpec privateKeySpec = new ECPrivateKeySpec(s, ecParameterSpec);
+		try {
+			KeyFactory keyFactory = KeyFactory.getInstance(EC);
+			return keyFactory.generatePrivate(privateKeySpec);
+		} catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
+			e.printStackTrace();
+			return null;
+		}
 	}
 
 	/**
-	 * Generate a random EC key pair
+	 * Generate an EC private key
 	 */
-	public static KeyPair generateECKeyPair() {
+	public static BigInteger generateECPrivateKey() {
 
 		try {
 
@@ -75,7 +111,8 @@ public class CryptoUtils {
 			g.initialize(ecSpec, SECURE_RANDOM);
 			KeyPair pair = g.generateKeyPair();
 
-			return pair;
+			BCECPrivateKey privKey = (BCECPrivateKey) pair.getPrivate();
+			return privKey.getD();
 
 		} catch (Exception e) {
 			log.error("Error: ", e);
@@ -86,23 +123,28 @@ public class CryptoUtils {
 	}
 
 	/**
-	 * Generate an ECC private key a HEX string 
+	 * Returns public key bytes from the given private key. To convert a byte
+	 * array into a BigInteger, use <tt>
+	 * new BigInteger(1, bytes);</tt>
 	 */
-	public static PrivateKey generateECKeyPairFromPrivateKey(String privateKeyHex) {
+	public static byte[] getPublicKeyFromPrivate(BigInteger privKey, boolean compressed) {
+		ECPoint point = getPublicPointFromPrivate(privKey);
+		return point.getEncoded(compressed);
+	}
 
-		try {
+	/**
+	 * Returns public key point from the given private key. To convert a byte
+	 * array into a BigInteger, use <tt>
+	 * new BigInteger(1, bytes);</tt>
+	 */
+	public static ECPoint getPublicPointFromPrivate(BigInteger privKey) {
 
-			KeyFactory kf = KeyFactory.getInstance(EC, BouncyCastleProvider.PROVIDER_NAME);
-			PrivateKey privateKey = kf.generatePrivate(new PKCS8EncodedKeySpec(Hex.decode(privateKeyHex)));
+		ECParameterSpec ecSpec = ECNamedCurveTable.getParameterSpec(BRAINPOOLP256T1);
 
-			return privateKey;
-
-		} catch (Exception e) {
-			log.error("Error: ", e);
+		if (privKey.bitLength() > ecSpec.getN().bitLength()) {
+			privKey = privKey.mod(ecSpec.getN());
 		}
-
-		return null;
-
+		return new FixedPointCombMultiplier().multiply(ecSpec.getG(), privKey);
 	}
 
 	/**
@@ -124,25 +166,6 @@ public class CryptoUtils {
 	}
 
 	/**
-	 * Create PrivateKey from byte array
-	 */
-	public static PrivateKey generatePrivateKey(byte[] key) throws Exception {
-
-		final PrivateKey privKey = KeyFactory.getInstance(EC, BouncyCastleProvider.PROVIDER_NAME).generatePrivate(new PKCS8EncodedKeySpec(key));
-
-		return privKey;
-
-	}
-
-	/**
-	 * Create PublicKey from byte array
-	 */
-	public static PublicKey generatePublicKey(byte[] key) throws Exception {
-		final PublicKey pubKey = KeyFactory.getInstance(EC, BouncyCastleProvider.PROVIDER_NAME).generatePublic(new X509EncodedKeySpec(key));
-		return pubKey;
-	}
-
-	/**
 	 * Generate a unique address for an account with a public key
 	 */
 	public static String generateAccountUniqueAddress(final String publicKeyHexString) {
@@ -153,7 +176,7 @@ public class CryptoUtils {
 
 			final byte[] publicKeyBytes = accountUuid.getBytes(StandardCharsets.UTF_8);
 
-			final Cipher c = Cipher.getInstance(ECIES);
+			final Cipher c = Cipher.getInstance(ECIES, BouncyCastleProvider.PROVIDER_NAME);
 
 			c.init(Cipher.ENCRYPT_MODE, networkAddressPublicKey, SECURE_RANDOM);
 
@@ -162,7 +185,7 @@ public class CryptoUtils {
 			String address = Base58.encode(out);
 
 			return ADDRESS_PREFIX_ZDP00 + address;
-			
+
 		} catch (Exception e) {
 			log.error("Error: ", e);
 			e.printStackTrace();
@@ -207,6 +230,57 @@ public class CryptoUtils {
 		}
 
 		return false;
+
+	}
+
+	/**
+	 * Decode a point on this curve which has been encoded using point
+	 * compression (X9.62 s 4.2.1 and 4.2.2) or regular encoding.
+	 * 
+	 * @param curve
+	 *            The elliptic curve.
+	 * 
+	 * @param encoded
+	 *            The encoded point.
+	 * 
+	 * @return the decoded point.
+	 * 
+	 */
+	public static ECPoint decodePoint(EllipticCurve curve, byte[] encoded) {
+		ECCurve c = null;
+
+		if (curve.getField() instanceof ECFieldFp) {
+			c = new ECCurve.Fp(((ECFieldFp) curve.getField()).getP(), curve.getA(), curve.getB());
+		} else {
+			int k[] = ((ECFieldF2m) curve.getField()).getMidTermsOfReductionPolynomial();
+
+			if (k.length == 3) {
+				c = new ECCurve.F2m(((ECFieldF2m) curve.getField()).getM(), k[2], k[1], k[0], curve.getA(),
+						curve.getB());
+			} else {
+				c = new ECCurve.F2m(((ECFieldF2m) curve.getField()).getM(), k[0], curve.getA(), curve.getB());
+			}
+		}
+
+		return c.decodePoint(encoded);
+	}
+
+	public static PublicKey getPublicKeyFromCompressedEncodedHexForm(String hex) throws Exception {
+
+		ECParameterSpec ecParameterSpec = ECNamedCurveTable.getParameterSpec(CryptoUtils.BRAINPOOLP256T1);
+
+		ECNamedCurveSpec params = new ECNamedCurveSpec(CryptoUtils.BRAINPOOLP256T1, ecParameterSpec.getCurve(),
+				ecParameterSpec.getG(), ecParameterSpec.getN());
+
+		ECPoint publicPoint = CryptoUtils.decodePoint(params.getCurve(), Hex.decode(hex));
+
+		ECPublicKeySpec pubKeySpec = new ECPublicKeySpec(publicPoint, ecParameterSpec);
+
+		KeyFactory keyFactory = KeyFactory.getInstance(CryptoUtils.EC);
+
+		PublicKey pk = keyFactory.generatePublic(pubKeySpec);
+
+		return pk;
 
 	}
 
