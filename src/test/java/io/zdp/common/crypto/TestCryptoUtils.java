@@ -25,6 +25,9 @@ public class TestCryptoUtils extends TestCase {
 		BigInteger pubInt = new BigInteger(1, publicKey);
 
 		System.out.println(pubInt);
+		
+		String accountId = CryptoUtils.generateAccountUuid(Hex.toHexString(publicKey));
+		System.out.println("Account id: " + accountId);
 
 		// address
 		String addr = CryptoUtils.generateAccountUniqueAddress(Hex.toHexString(publicKey));
