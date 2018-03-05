@@ -14,6 +14,8 @@ public class TestCryptoUtils extends TestCase {
 
 		BigInteger privateKey = CryptoUtils.generateECPrivateKey();
 		System.out.println("Private: " + privateKey);
+		String privateEncoded = Base58.encode(privateKey.toByteArray());
+		System.out.println("Private b58: " + privateEncoded);
 
 		assertNotNull(privateKey);
 
@@ -25,7 +27,7 @@ public class TestCryptoUtils extends TestCase {
 		BigInteger pubInt = new BigInteger(1, publicKey);
 
 		System.out.println(pubInt);
-		
+
 		String accountId = CryptoUtils.generateAccountUuid(Hex.toHexString(publicKey));
 		System.out.println("Account id: " + accountId);
 
@@ -39,28 +41,25 @@ public class TestCryptoUtils extends TestCase {
 
 		String text = "hello world";
 
-		byte[] signature = null;
-
-		// sign
 		{
-			String privToSign = "42914229365365066745332708095887935810489641559952468893285950129983775193557";
-			signature = CryptoUtils.sign(CryptoUtils.getPrivateKeyFromECBigIntAndCurve(new BigInteger(privToSign)), text);
-		}
+			byte[] signature = null;
 
-		System.out.println("Sign: " + Hex.toHexString(signature));
+			// sign
+			{
+				String privToSign = "42914229365365066745332708095887935810489641559952468893285950129983775193557";
+				signature = CryptoUtils.sign(privToSign, text);
+			}
 
-		// verify
-		{
-			String pubToVerify = "0234b6f4003a61ca837e27cb2adc8cfa46a7881b58451c210bc56f7b81eadd22d7";
+			System.out.println("Sign: " + Hex.toHexString(signature));
 
-			PublicKey pk = CryptoUtils.getPublicKeyFromCompressedEncodedHexForm(pubToVerify);
-
-			boolean valid = CryptoUtils.isValidSignature(pk, text, signature);
-
-			System.out.println(valid);
-
-			assertTrue(valid);
-
+			// verify
+			{
+				String pubToVerify = "0234b6f4003a61ca837e27cb2adc8cfa46a7881b58451c210bc56f7b81eadd22d7";
+				PublicKey pk = CryptoUtils.getPublicKeyFromCompressedEncodedHexForm(pubToVerify);
+				boolean valid = CryptoUtils.isValidSignature(pk, text, signature);
+				System.out.println(valid);
+				assertTrue(valid);
+			}
 		}
 
 	}

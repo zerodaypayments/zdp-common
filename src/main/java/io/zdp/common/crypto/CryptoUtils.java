@@ -25,12 +25,8 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.IOUtils;
 import org.bitcoinj.core.Base58;
 import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPrivateKey;
-import org.bouncycastle.jcajce.provider.asymmetric.util.EC5Util;
 import org.bouncycastle.jce.ECNamedCurveTable;
-import org.bouncycastle.jce.ECPointUtil;
-import org.bouncycastle.jce.interfaces.ECPublicKey;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
 import org.bouncycastle.jce.spec.ECNamedCurveSpec;
 import org.bouncycastle.jce.spec.ECParameterSpec;
 import org.bouncycastle.jce.spec.ECPrivateKeySpec;
@@ -67,8 +63,7 @@ public class CryptoUtils {
 		Security.addProvider(new BouncyCastleProvider());
 
 		try {
-			String pubKey64 = IOUtils.toString(CryptoUtils.class.getResource("/cert/ec-public"),
-					StandardCharsets.UTF_8);
+			String pubKey64 = IOUtils.toString(CryptoUtils.class.getResource("/cert/ec-public"), StandardCharsets.UTF_8);
 			networkAddressPublicKey = loadPublicKey(Base64.decodeBase64(pubKey64));
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -80,8 +75,7 @@ public class CryptoUtils {
 	 * Create PublicKey from byte array
 	 */
 	public static PublicKey loadPublicKey(byte[] key) throws Exception {
-		final PublicKey pubKey = KeyFactory.getInstance(EC, BouncyCastleProvider.PROVIDER_NAME)
-				.generatePublic(new X509EncodedKeySpec(key));
+		final PublicKey pubKey = KeyFactory.getInstance(EC, BouncyCastleProvider.PROVIDER_NAME).generatePublic(new X509EncodedKeySpec(key));
 		return pubKey;
 	}
 
@@ -209,6 +203,20 @@ public class CryptoUtils {
 		return sign.sign();
 
 	}
+	
+	public static byte[] sign(byte[] privateKeyBytes, String data) throws Exception {
+
+		PrivateKey privateKey = getPrivateKeyFromECBigIntAndCurve(new BigInteger(privateKeyBytes));
+
+		return sign(privateKey, data);
+	}	
+
+	public static byte[] sign(String privateKeyHex, String data) throws Exception {
+
+		PrivateKey privateKey = getPrivateKeyFromECBigIntAndCurve(new BigInteger(privateKeyHex));
+
+		return sign(privateKey, data);
+	}
 
 	/**
 	 * Check is a Digital signature is valid by using provided RS public key
@@ -255,8 +263,7 @@ public class CryptoUtils {
 			int k[] = ((ECFieldF2m) curve.getField()).getMidTermsOfReductionPolynomial();
 
 			if (k.length == 3) {
-				c = new ECCurve.F2m(((ECFieldF2m) curve.getField()).getM(), k[2], k[1], k[0], curve.getA(),
-						curve.getB());
+				c = new ECCurve.F2m(((ECFieldF2m) curve.getField()).getM(), k[2], k[1], k[0], curve.getA(), curve.getB());
 			} else {
 				c = new ECCurve.F2m(((ECFieldF2m) curve.getField()).getM(), k[0], curve.getA(), curve.getB());
 			}
@@ -269,8 +276,7 @@ public class CryptoUtils {
 
 		ECParameterSpec ecParameterSpec = ECNamedCurveTable.getParameterSpec(CryptoUtils.BRAINPOOLP256T1);
 
-		ECNamedCurveSpec params = new ECNamedCurveSpec(CryptoUtils.BRAINPOOLP256T1, ecParameterSpec.getCurve(),
-				ecParameterSpec.getG(), ecParameterSpec.getN());
+		ECNamedCurveSpec params = new ECNamedCurveSpec(CryptoUtils.BRAINPOOLP256T1, ecParameterSpec.getCurve(), ecParameterSpec.getG(), ecParameterSpec.getN());
 
 		ECPoint publicPoint = CryptoUtils.decodePoint(params.getCurve(), Hex.decode(hex));
 
