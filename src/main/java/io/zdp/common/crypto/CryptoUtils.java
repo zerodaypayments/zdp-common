@@ -7,6 +7,7 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
@@ -162,9 +163,7 @@ public class CryptoUtils {
 
 		final byte[] hash = DigestUtils.sha256(DigestUtils.sha256(publicKeyB58));
 
-		final MessageDigest messageDigest = MessageDigest.getInstance(RIPEMD160, BouncyCastleProvider.PROVIDER_NAME);
-
-		final byte[] hashedString = messageDigest.digest(hash);
+		final byte[] hashedString = ripemd160(hash);
 
 		final String account = Base58.encode(hashedString);
 
@@ -172,14 +171,27 @@ public class CryptoUtils {
 
 	}
 
+	public static byte[] ripemd160(byte[] v) {
+		try {
+			final MessageDigest messageDigest = MessageDigest.getInstance(RIPEMD160, BouncyCastleProvider.PROVIDER_NAME);
+			final byte[] hash = messageDigest.digest(v);
+			return hash;
+		} catch (NoSuchAlgorithmException e) {
+			log.error("Error: ", e);
+		} catch (NoSuchProviderException e) {
+			log.error("Error: ", e);
+		}
+		return null;
+	}
+
 	/**
 	 * Generate a unique address for an account with a public key
 	 */
-	public static String generateAccountUniqueAddress(final String publicKeyHexString) {
+	public static String generateAccountUniqueAddress(final String publicKey58) {
 
 		try {
 
-			String accountUuid = generateAccountUuid(publicKeyHexString);
+			String accountUuid = generateAccountUuid(publicKey58);
 
 			final byte[] publicKeyBytes = accountUuid.getBytes(StandardCharsets.UTF_8);
 
