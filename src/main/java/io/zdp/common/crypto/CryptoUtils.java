@@ -16,6 +16,7 @@ import java.security.spec.ECFieldF2m;
 import java.security.spec.ECFieldFp;
 import java.security.spec.EllipticCurve;
 import java.security.spec.InvalidKeySpecException;
+import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 
 import javax.crypto.Cipher;
@@ -23,6 +24,7 @@ import javax.crypto.Cipher;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.bitcoinj.core.Base58;
 import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPrivateKey;
 import org.bouncycastle.jce.ECNamedCurveTable;
@@ -71,12 +73,24 @@ public class CryptoUtils {
 
 	}
 
+	public static PublicKey getNetworkAddressPublicKey() {
+		return networkAddressPublicKey;
+	}
+
 	/**
-	 * Create PublicKey from byte array
+	 * Load PublicKey
 	 */
 	public static PublicKey loadPublicKey(byte[] key) throws Exception {
 		final PublicKey pubKey = KeyFactory.getInstance(EC, BouncyCastleProvider.PROVIDER_NAME).generatePublic(new X509EncodedKeySpec(key));
 		return pubKey;
+	}
+
+	/**
+	 * Load PrivateKey
+	 */
+	public static PrivateKey loadPrivateKey(byte[] key) throws Exception {
+		final PrivateKey privKey = KeyFactory.getInstance(EC, BouncyCastleProvider.PROVIDER_NAME).generatePrivate(new PKCS8EncodedKeySpec(key));
+		return privKey;
 	}
 
 	public static PrivateKey getPrivateKeyFromECBigIntAndCurve(BigInteger s) {
@@ -144,11 +158,9 @@ public class CryptoUtils {
 	/**
 	 * Generate account UUID from Public Key
 	 */
-	public static String generateAccountUuid(final String publicKeyHexString) throws Exception {
+	public static String generateAccountUuid(final String publicKeyB58) throws Exception {
 
-		final byte[] pub = Hex.decode(publicKeyHexString);
-
-		final byte[] hash = DigestUtils.sha256(DigestUtils.sha256(pub));
+		final byte[] hash = DigestUtils.sha256(DigestUtils.sha256(publicKeyB58));
 
 		final MessageDigest messageDigest = MessageDigest.getInstance(RIPEMD160, BouncyCastleProvider.PROVIDER_NAME);
 
@@ -157,6 +169,7 @@ public class CryptoUtils {
 		final String account = Base58.encode(hashedString);
 
 		return account;
+
 	}
 
 	/**
@@ -203,13 +216,13 @@ public class CryptoUtils {
 		return sign.sign();
 
 	}
-	
+
 	public static byte[] sign(byte[] privateKeyBytes, String data) throws Exception {
 
 		PrivateKey privateKey = getPrivateKeyFromECBigIntAndCurve(new BigInteger(privateKeyBytes));
 
 		return sign(privateKey, data);
-	}	
+	}
 
 	public static byte[] sign(String privateKeyHex, String data) throws Exception {
 
@@ -288,6 +301,10 @@ public class CryptoUtils {
 
 		return pk;
 
+	}
+
+	public static boolean isValidAddress(String address) {
+		return StringUtils.startsWith(address, ADDRESS_PREFIX_ZDP00) && StringUtils.length(address) == 160;
 	}
 
 }
