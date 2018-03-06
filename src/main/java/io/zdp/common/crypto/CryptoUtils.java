@@ -297,6 +297,10 @@ public class CryptoUtils {
 		return c.decodePoint(encoded);
 	}
 
+	public static PublicKey getPublicKeyFromRequest(String value) throws Exception {
+		return CryptoUtils.getPublicKeyFromCompressedEncodedHexForm(Hex.toHexString(Base58.decode(value)));
+	}
+
 	public static PublicKey getPublicKeyFromCompressedEncodedHexForm(String hex) throws Exception {
 
 		ECParameterSpec ecParameterSpec = ECNamedCurveTable.getParameterSpec(CryptoUtils.BRAINPOOLP256T1);
