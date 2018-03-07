@@ -171,6 +171,10 @@ public class CryptoUtils {
 
 	}
 
+	public static byte[] ripemd160(String v) {
+		return ripemd160(v.getBytes(StandardCharsets.UTF_8));
+	}
+
 	public static byte[] ripemd160(byte[] v) {
 		try {
 			final MessageDigest messageDigest = MessageDigest.getInstance(RIPEMD160, BouncyCastleProvider.PROVIDER_NAME);
@@ -320,7 +324,7 @@ public class CryptoUtils {
 	}
 
 	public static boolean isValidAddress(String address) {
-		return StringUtils.startsWith(address, ADDRESS_PREFIX_ZDP00) && StringUtils.length(address) == 160;
+		return StringUtils.startsWith(address, ADDRESS_PREFIX_ZDP00);
 	}
 
 }
