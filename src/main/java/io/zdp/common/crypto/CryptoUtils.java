@@ -26,6 +26,7 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.bitcoinj.core.Base58;
 import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPrivateKey;
 import org.bouncycastle.jce.ECNamedCurveTable;
@@ -325,6 +326,17 @@ public class CryptoUtils {
 
 	public static boolean isValidAddress(String address) {
 		return StringUtils.startsWith(address, ADDRESS_PREFIX_ZDP00);
+	}
+
+	public static Pair<String, String> getNewAccount() {
+
+		BigInteger priv = CryptoUtils.generateECPrivateKey();
+		byte[] pub = CryptoUtils.getPublicKeyFromPrivate(priv, true);
+
+		String priv58 = Base58.encode(priv.toByteArray());
+		String pub58 = Base58.encode(pub);
+
+		return Pair.of(priv58, pub58);
 	}
 
 }
