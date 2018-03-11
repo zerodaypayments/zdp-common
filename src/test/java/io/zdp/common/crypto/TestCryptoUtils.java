@@ -3,6 +3,7 @@ package io.zdp.common.crypto;
 import java.math.BigInteger;
 import java.security.PublicKey;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.bitcoinj.core.Base58;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -41,20 +42,21 @@ public class TestCryptoUtils extends TestCase {
 
 		String text = "hello world";
 
+		Pair<String, String> account = CryptoUtils.getNewAccount();
+
 		{
 			byte[] signature = null;
 
 			// sign
 			{
-				String privToSign = "42914229365365066745332708095887935810489641559952468893285950129983775193557";
-				signature = CryptoUtils.sign(privToSign, text);
+				signature = CryptoUtils.sign(Base58.decode(account.getLeft()), text);
 			}
 
 			System.out.println("Sign: " + Hex.toHexString(signature));
 
 			// verify
 			{
-				String pubToVerify = "0234b6f4003a61ca837e27cb2adc8cfa46a7881b58451c210bc56f7b81eadd22d7";
+				String pubToVerify = Hex.toHexString(Base58.decode(account.getRight()));
 				PublicKey pk = CryptoUtils.getPublicKeyFromCompressedEncodedHexForm(pubToVerify);
 				boolean valid = CryptoUtils.isValidSignature(pk, text, signature);
 				System.out.println(valid);

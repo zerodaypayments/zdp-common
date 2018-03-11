@@ -52,7 +52,7 @@ public class CryptoUtils {
 
 	public static final String ECIES = "ECIES";
 
-	public static final String BRAINPOOLP256T1 = "brainpoolp256t1";
+	public static final String SECP256K1 = "secp256k1";
 
 	public static final String EC = "EC";
 
@@ -68,7 +68,7 @@ public class CryptoUtils {
 
 		try {
 			String pubKey64 = IOUtils.toString(CryptoUtils.class.getResource("/cert/ec-public"), StandardCharsets.UTF_8);
-			networkAddressPublicKey = loadPublicKey(Base64.decodeBase64(pubKey64));
+			networkAddressPublicKey = getPublicKeyFromRequest(pubKey64);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -97,7 +97,7 @@ public class CryptoUtils {
 
 	public static PrivateKey getPrivateKeyFromECBigIntAndCurve(BigInteger s) {
 
-		ECParameterSpec ecParameterSpec = ECNamedCurveTable.getParameterSpec(BRAINPOOLP256T1);
+		ECParameterSpec ecParameterSpec = ECNamedCurveTable.getParameterSpec(SECP256K1);
 
 		ECPrivateKeySpec privateKeySpec = new ECPrivateKeySpec(s, ecParameterSpec);
 		try {
@@ -116,7 +116,7 @@ public class CryptoUtils {
 
 		try {
 
-			ECParameterSpec ecSpec = ECNamedCurveTable.getParameterSpec(BRAINPOOLP256T1);
+			ECParameterSpec ecSpec = ECNamedCurveTable.getParameterSpec(SECP256K1);
 			KeyPairGenerator g = KeyPairGenerator.getInstance(EC, BouncyCastleProvider.PROVIDER_NAME);
 			g.initialize(ecSpec, SECURE_RANDOM);
 			KeyPair pair = g.generateKeyPair();
@@ -149,7 +149,7 @@ public class CryptoUtils {
 	 */
 	public static ECPoint getPublicPointFromPrivate(BigInteger privKey) {
 
-		ECParameterSpec ecSpec = ECNamedCurveTable.getParameterSpec(BRAINPOOLP256T1);
+		ECParameterSpec ecSpec = ECNamedCurveTable.getParameterSpec(SECP256K1);
 
 		if (privKey.bitLength() > ecSpec.getN().bitLength()) {
 			privKey = privKey.mod(ecSpec.getN());
@@ -308,9 +308,9 @@ public class CryptoUtils {
 
 	public static PublicKey getPublicKeyFromCompressedEncodedHexForm(String hex) throws Exception {
 
-		ECParameterSpec ecParameterSpec = ECNamedCurveTable.getParameterSpec(CryptoUtils.BRAINPOOLP256T1);
+		ECParameterSpec ecParameterSpec = ECNamedCurveTable.getParameterSpec(CryptoUtils.SECP256K1);
 
-		ECNamedCurveSpec params = new ECNamedCurveSpec(CryptoUtils.BRAINPOOLP256T1, ecParameterSpec.getCurve(), ecParameterSpec.getG(), ecParameterSpec.getN());
+		ECNamedCurveSpec params = new ECNamedCurveSpec(CryptoUtils.SECP256K1, ecParameterSpec.getCurve(), ecParameterSpec.getG(), ecParameterSpec.getN());
 
 		ECPoint publicPoint = CryptoUtils.decodePoint(params.getCurve(), Hex.decode(hex));
 
