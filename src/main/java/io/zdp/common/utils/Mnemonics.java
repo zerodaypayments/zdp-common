@@ -10,6 +10,8 @@ import java.util.Map;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.bitcoinj.core.Base58;
+import org.bouncycastle.util.encoders.Hex;
 
 /**
  * Based on https://github.com/bitcoin/bips/blob/master/bip-0039.mediawiki
@@ -52,13 +54,13 @@ public class Mnemonics {
 		}
 	}
 
-	public static List<String> generateWords(final Language lang, String seed) {
+	public static List<String> generateWords(final Language lang, byte[] privateKey) {
 
 		final List<String> words = new ArrayList<>();
 
-		final String seedHash = DigestUtils.sha256Hex(seed);
+		final String seedHash = DigestUtils.sha256Hex(privateKey);
 
-		BigInteger number = new BigInteger(seed, 16);
+		BigInteger number = new BigInteger(privateKey);
 		String binaryString = number.toString(2);
 
 		if (binaryString.length() != 256) {
@@ -82,7 +84,7 @@ public class Mnemonics {
 
 	}
 
-	public static String generateSeedFromWords(final Language lang, List<String> words) {
+	public static byte[] generateSeedFromWords(final Language lang, List<String> words) {
 
 		StringBuilder sb = new StringBuilder();
 		for (String word : words) {
@@ -97,11 +99,7 @@ public class Mnemonics {
 
 		BigInteger i = new BigInteger(sb.toString(), 2);
 
-		String str = i.toString(16);
-
-		str = StringUtils.leftPad(str, 64, "0");
-
-		return str;
+		return i.toByteArray();
 	}
 
 }
