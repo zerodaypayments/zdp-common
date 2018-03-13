@@ -10,8 +10,6 @@ import java.util.Map;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.bitcoinj.core.Base58;
-import org.bouncycastle.util.encoders.Hex;
 
 /**
  * Based on https://github.com/bitcoin/bips/blob/master/bip-0039.mediawiki
