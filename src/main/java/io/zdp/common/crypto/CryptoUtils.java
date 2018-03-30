@@ -22,11 +22,9 @@ import java.security.spec.X509EncodedKeySpec;
 
 import javax.crypto.Cipher;
 
-import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
 import org.bitcoinj.core.Base58;
 import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPrivateKey;
 import org.bouncycastle.jce.ECNamedCurveTable;
@@ -41,6 +39,8 @@ import org.bouncycastle.math.ec.FixedPointCombMultiplier;
 import org.bouncycastle.util.encoders.Hex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import io.zdp.common.crypto.model.AccountKeys;
 
 public class CryptoUtils {
 
@@ -158,9 +158,9 @@ public class CryptoUtils {
 	}
 
 	/**
-	 * Generate account UUID from Public Key
+	 * Generate account UUID from Public Key in Base58 format
 	 */
-	public static String generateAccountUuid(final String publicKeyB58) throws Exception {
+	public static String generateAccountUuidFromPublicKey58(final String publicKeyB58) throws Exception {
 
 		final byte[] hash = DigestUtils.sha256(DigestUtils.sha256(publicKeyB58));
 
@@ -190,13 +190,13 @@ public class CryptoUtils {
 	}
 
 	/**
-	 * Generate a unique address for an account with a public key
+	 * Generate a unique address for an account with a public key in base58 format
 	 */
-	public static String generateAccountUniqueAddress(final String publicKey58) {
+	public static String generateUniqueAddressByPublicKey58(final String publicKey58) {
 
 		try {
 
-			String accountUuid = generateAccountUuid(publicKey58);
+			String accountUuid = generateAccountUuidFromPublicKey58(publicKey58);
 
 			final byte[] publicKeyBytes = accountUuid.getBytes(StandardCharsets.UTF_8);
 
@@ -302,6 +302,12 @@ public class CryptoUtils {
 		return c.decodePoint(encoded);
 	}
 
+	public static String getPublicKey58FromPrivateKey58(String privKey58) {
+		byte[] publicKey = CryptoUtils.getPublicKeyFromPrivate(new BigInteger(Base58.decode(privKey58)), true);
+		return Base58.encode(publicKey);
+
+	}
+
 	public static PublicKey getPublicKeyFromRequest(String value) throws Exception {
 		return CryptoUtils.getPublicKeyFromCompressedEncodedHexForm(Hex.toHexString(Base58.decode(value)));
 	}
@@ -328,15 +334,23 @@ public class CryptoUtils {
 		return StringUtils.startsWith(address, ADDRESS_PREFIX_ZDP00);
 	}
 
-	public static Pair<String, String> getNewAccount() {
+	public static String getNewPrivateKey58() {
 
 		BigInteger priv = CryptoUtils.generateECPrivateKey();
-		byte[] pub = CryptoUtils.getPublicKeyFromPrivate(priv, true);
-
 		String priv58 = Base58.encode(priv.toByteArray());
+
+		return priv58;
+	}
+
+	public static AccountKeys getNewAccount() {
+
+		BigInteger priv = CryptoUtils.generateECPrivateKey();
+		String priv58 = Base58.encode(priv.toByteArray());
+
+		byte[] pub = CryptoUtils.getPublicKeyFromPrivate(priv, true);
 		String pub58 = Base58.encode(pub);
 
-		return Pair.of(priv58, pub58);
+		return new AccountKeys(priv58, pub58);
 	}
 
 }

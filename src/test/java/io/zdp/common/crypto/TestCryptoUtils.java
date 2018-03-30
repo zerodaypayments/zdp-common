@@ -3,10 +3,10 @@ package io.zdp.common.crypto;
 import java.math.BigInteger;
 import java.security.PublicKey;
 
-import org.apache.commons.lang3.tuple.Pair;
 import org.bitcoinj.core.Base58;
 import org.bouncycastle.util.encoders.Hex;
 
+import io.zdp.common.crypto.model.AccountKeys;
 import junit.framework.TestCase;
 
 public class TestCryptoUtils extends TestCase {
@@ -29,12 +29,21 @@ public class TestCryptoUtils extends TestCase {
 
 		System.out.println(pubInt);
 
-		String accountId = CryptoUtils.generateAccountUuid(Hex.toHexString(publicKey));
+		String accountId = CryptoUtils.generateAccountUuidFromPublicKey58(Hex.toHexString(publicKey));
 		System.out.println("Account id: " + accountId);
 
 		// address
-		String addr = CryptoUtils.generateAccountUniqueAddress(Hex.toHexString(publicKey));
+		String addr = CryptoUtils.generateUniqueAddressByPublicKey58(Hex.toHexString(publicKey));
 		System.out.println(addr);
+
+	}
+
+	public void testPublicKeyFromPrivateKey() {
+
+		String privKey58 = "iZM1d2wZCeD7489wEh14aipyHRM8y7oHYrYGmQvKBM2";
+		String pub = CryptoUtils.getPublicKey58FromPrivateKey58(privKey58);
+
+		assertEquals("etQ16UPTLz6RUSDF3AMmhFN42WFvg9Rm8apQ99zLamfH", pub);
 
 	}
 
@@ -42,21 +51,21 @@ public class TestCryptoUtils extends TestCase {
 
 		String text = "hello world";
 
-		Pair<String, String> account = CryptoUtils.getNewAccount();
+		AccountKeys account = CryptoUtils.getNewAccount();
 
 		{
 			byte[] signature = null;
 
 			// sign
 			{
-				signature = CryptoUtils.sign(Base58.decode(account.getLeft()), text);
+				signature = CryptoUtils.sign(Base58.decode(account.getPrivateKey58()), text);
 			}
 
 			System.out.println("Sign: " + Hex.toHexString(signature));
 
 			// verify
 			{
-				String pubToVerify = Hex.toHexString(Base58.decode(account.getRight()));
+				String pubToVerify = Hex.toHexString(Base58.decode(account.getPublicKey58()));
 				PublicKey pk = CryptoUtils.getPublicKeyFromCompressedEncodedHexForm(pubToVerify);
 				boolean valid = CryptoUtils.isValidSignature(pk, text, signature);
 				System.out.println(valid);

@@ -3,10 +3,10 @@ package io.zdp.common.crypto;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
 
-import org.apache.commons.lang3.tuple.Pair;
 import org.bitcoinj.core.Base58;
 import org.junit.Test;
 
+import io.zdp.common.crypto.model.AccountKeys;
 import io.zdp.common.utils.Mnemonics;
 import io.zdp.common.utils.Mnemonics.Language;
 import junit.framework.TestCase;
@@ -19,9 +19,9 @@ public class TestMnemonics extends TestCase {
 		System.out.println("TestMnemonics.Test");
 
 		for (int i = 0; i < 10000; i++) {
-			Pair<String, String> newAccount = CryptoUtils.getNewAccount();
+			AccountKeys newAccount = CryptoUtils.getNewAccount();
 
-			String priv = newAccount.getLeft();
+			String priv = newAccount.getPrivateKey58();
 
 			System.out.println(priv);
 

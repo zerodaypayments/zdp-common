@@ -10,6 +10,7 @@ import java.util.Map;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.bitcoinj.core.Base58;
 
 /**
  * Based on https://github.com/bitcoin/bips/blob/master/bip-0039.mediawiki
@@ -50,6 +51,10 @@ public class Mnemonics {
 			//log.error("Error: ", e);
 			e.printStackTrace();
 		}
+	}
+
+	public static List<String> generateWords(final Language lang, String privateKey58) {
+		return generateWords(lang, Base58.decode(privateKey58));
 	}
 
 	public static List<String> generateWords(final Language lang, byte[] privateKey) {
