@@ -13,6 +13,11 @@ public class TestCryptoUtils extends TestCase {
 
 	public void test() throws Exception {
 
+		AccountKeys kp = CryptoUtils.getNewAccount();
+
+		System.out.println("pPRIV :" + kp.getPrivateKey58());
+		System.out.println("ppub :" + kp.getPublicKey58AsAddress());
+
 		BigInteger privateKey = CryptoUtils.generateECPrivateKey();
 		System.out.println("Private: " + privateKey);
 		String privateEncoded = Base58.encode(privateKey.toByteArray());
@@ -65,7 +70,7 @@ public class TestCryptoUtils extends TestCase {
 
 			// verify
 			{
-				String pubToVerify = Hex.toHexString(Base58.decode(account.getPublicKey58()));
+				String pubToVerify = Hex.toHexString(Base58.decode(account.getPublicKey58AsAddress()));
 				PublicKey pk = CryptoUtils.getPublicKeyFromCompressedEncodedHexForm(pubToVerify);
 				boolean valid = CryptoUtils.isValidSignature(pk, text, signature);
 				System.out.println(valid);

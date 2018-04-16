@@ -5,8 +5,10 @@ import java.math.BigInteger;
 import java.security.PrivateKey;
 
 import org.bitcoinj.core.Base58;
+import org.bouncycastle.util.encoders.Hex;
 
 import io.zdp.common.crypto.CryptoUtils;
+import io.zdp.common.crypto.Cryptos;
 
 /**
  * DTO for a private/public key pair in Base58 format
@@ -17,52 +19,39 @@ import io.zdp.common.crypto.CryptoUtils;
 @SuppressWarnings("serial")
 public class AccountKeys implements Serializable {
 
-	private String privateKey58;
+	private BigInteger priv;
 
-	private String publicKey58;
+	public AccountKeys(BigInteger priv) {
+		super();
+		this.priv = priv;
+	}
 
 	public String getPrivateKey58() {
-		return privateKey58;
+		return Base58.encode(priv.toByteArray());
 	}
 
-	public void setPrivateKey58(String privateKey58) {
-		this.privateKey58 = privateKey58;
-	}
-
-	public String getPublicKey58() {
-		return publicKey58;
-	}
-
-	public void setPublicKey58(String publicKey58) {
-		this.publicKey58 = publicKey58;
-	}
-
-	public AccountKeys() {
-		super();
-	}
-
-	public AccountKeys(String privateKey58) {
-		super();
-		this.privateKey58 = privateKey58;
-		this.publicKey58 = CryptoUtils.getPublicKey58FromPrivateKey58(privateKey58);
-	}
-
-	public AccountKeys(String privateKey58, String publicKey58) {
-		super();
-		this.privateKey58 = privateKey58;
-		this.publicKey58 = publicKey58;
+	public String getPublicKey58AsAddress() {
+		return "zdp" + Cryptos.toPublicBase58(Cryptos.getPublicKeyFromPrivate(priv));
 	}
 
 	public byte[] sign(String data) throws Exception {
 
-		PrivateKey privateKey = CryptoUtils.getPrivateKeyFromECBigIntAndCurve(new BigInteger(Base58.decode(this.privateKey58)));
+		PrivateKey privateKey = CryptoUtils.getPrivateKeyFromECBigIntAndCurve(priv);
 
 		return CryptoUtils.sign(privateKey, data);
 	}
 
+	public String getPrivateKeyAsHex() {
+		return Hex.toHexString(priv.toByteArray());
+	}
+
+	public String getPublicKeyAsHex() {
+		return Hex.toHexString(Cryptos.getPublicKeyFromPrivate(priv));
+	}
+
 	@Override
 	public String toString() {
-		return "AccountKeys [privateKey58=" + privateKey58 + ", publicKey58=" + publicKey58 + "]";
+		return "AccountKeys [getPrivateKey58()=" + getPrivateKey58() + ", getPublicKey58()=" + getPublicKey58AsAddress() + "]";
 	}
 
 }

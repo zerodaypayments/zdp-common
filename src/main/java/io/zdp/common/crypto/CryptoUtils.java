@@ -345,12 +345,8 @@ public class CryptoUtils {
 	public static AccountKeys getNewAccount() {
 
 		BigInteger priv = CryptoUtils.generateECPrivateKey();
-		String priv58 = Base58.encode(priv.toByteArray());
 
-		byte[] pub = CryptoUtils.getPublicKeyFromPrivate(priv, true);
-		String pub58 = Base58.encode(pub);
-
-		return new AccountKeys(priv58, pub58);
+		return new AccountKeys(priv);
 	}
 
 }
